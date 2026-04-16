@@ -1,0 +1,20 @@
+# deps
+node_modules/
+
+# build
+dist/
+
+# editor / IDE
+.idea/
+.vscode/
+.claude/
+
+# env
+.env
+.env.local
+
+# logs
+*.log
+
+# test
+coverage/
