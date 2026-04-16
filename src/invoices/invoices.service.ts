@@ -8,6 +8,12 @@ import { SettingsService } from '../settings/settings.service';
 import { computeLineTotal, computeTotals } from '../common/helpers/money';
 import { amountInWords } from '../common/helpers/amount-in-words';
 import { InvoiceDto } from './dto/invoice.dto';
+import { ConfigService } from '@nestjs/config';
+import { PdfService } from '../pdf/pdf.service';
+import { buildPdfModel } from './invoice-mapper';
+import { resolve } from 'path';
+import * as Hbs from 'hbs';
+import { readFile } from 'fs/promises';
 
 @Injectable()
 export class InvoicesService {
@@ -15,6 +21,8 @@ export class InvoicesService {
     @InjectDataSource() private readonly ds: DataSource,
     private readonly counters: CountersService,
     private readonly settings: SettingsService,
+    private readonly pdf: PdfService,
+    private readonly config: ConfigService,
   ) {}
 
   async create(dto: InvoiceDto, userId: number): Promise<Invoice> {
@@ -71,6 +79,21 @@ export class InvoicesService {
     });
     if (!inv) throw new NotFoundException(`Invoice ${id} not found`);
     return inv;
+  }
+
+  async renderPdf(id: number): Promise<{ buffer: Buffer; path: string; fileName: string }> {
+    const invoice = await this.findOne(id);
+    const settings = await this.settings.get();
+    const logoAbs = resolve(settings.logoPath ?? 'public/logo.png');
+    const logoSrc = `file://${logoAbs}`;
+    const tplPath = resolve('views/invoice-pdf.hbs');
+    const tplSrc = await readFile(tplPath, 'utf8');
+    const tpl = Hbs.handlebars.compile(tplSrc);
+    const html = tpl(buildPdfModel(invoice, settings, logoSrc));
+    const buffer = await this.pdf.renderHtmlToBuffer(html);
+    const fileName = `${invoice.year}-${String(invoice.invoiceNumber).padStart(3, '0')}-r${invoice.revision}.pdf`;
+    const path = await this.pdf.writeBufferToDisk(buffer, fileName);
+    return { buffer, path, fileName };
   }
 
   list(filters: { year?: number; customerId?: number; status?: string }): Promise<Invoice[]> {
