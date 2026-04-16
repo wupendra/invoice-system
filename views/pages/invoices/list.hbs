@@ -1,0 +1,35 @@
+<div style="display:flex; justify-content:space-between; align-items:center;">
+  <h1>Invoices</h1>
+  {{#if isAdmin}}<a href="/invoices/new" style="padding:0.5rem 0.9rem; background:#c69214; color:#fff; border-radius:4px; text-decoration:none;">+ New invoice</a>{{/if}}
+</div>
+<form method="get" action="/invoices" style="display:flex; gap:0.5rem; margin-bottom:1rem">
+  <input name="year" value="{{year}}" placeholder="Year" style="width:90px"/>
+  <select name="customerId">
+    <option value="">All customers</option>
+    {{#each customers}}<option value="{{this.id}}" {{#if (eq ../customerId this.id)}}selected{{/if}}>{{this.companyName}}</option>{{/each}}
+  </select>
+  <select name="status">
+    <option value="">All statuses</option>
+    <option value="draft"     {{#if (eq status 'draft')}}selected{{/if}}>Draft</option>
+    <option value="sent"      {{#if (eq status 'sent')}}selected{{/if}}>Sent</option>
+    <option value="corrected" {{#if (eq status 'corrected')}}selected{{/if}}>Corrected</option>
+  </select>
+  <button type="submit">Filter</button>
+</form>
+<table>
+  <thead><tr><th>#</th><th>Date</th><th>Customer</th><th>Total</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+    {{#each invoices}}
+      <tr>
+        <td>{{this.year}}-{{padNum this.invoiceNumber}}</td>
+        <td>{{this.invoiceDate}}</td>
+        <td>{{this.customer.companyName}}</td>
+        <td>{{numFmt this.grandTotal}}</td>
+        <td>{{this.status}}</td>
+        <td><a href="/invoices/{{this.id}}">View</a></td>
+      </tr>
+    {{else}}
+      <tr><td colspan="6">No invoices yet.</td></tr>
+    {{/each}}
+  </tbody>
+</table>
