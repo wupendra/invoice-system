@@ -1,12 +1,16 @@
 import { Body, Controller, Get, Post, Render, Req, Res } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { Public } from '../common/decorators/public.decorator';
 
 @Controller()
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(
+    private readonly auth: AuthService,
+    private readonly config: ConfigService,
+  ) {}
 
   @Public() @Get('login') @Render('pages/login')
   showLogin() {
@@ -19,7 +23,7 @@ export class AuthController {
       const { token } = await this.auth.login(dto.email, dto.password);
       res.cookie('aq_token', token, {
         httpOnly: true,
-        secure: process.env.COOKIE_SECURE === 'true',
+        secure: this.config.get<string>('COOKIE_SECURE') === 'true',
         sameSite: 'lax',
       });
       return res.redirect('/');
