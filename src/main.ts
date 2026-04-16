@@ -10,14 +10,15 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const config = app.get(ConfigService);
 
-  app.useStaticAssets(join(__dirname, '..', 'public'), { prefix: '/public/' });
-  app.setBaseViewsDir(join(__dirname, '..', 'views'));
+  const root = process.cwd();
+  app.useStaticAssets(join(root, 'public'), { prefix: '/public/' });
+  app.setBaseViewsDir(join(root, 'views'));
   app.setViewEngine('hbs');
 
   // hbs partials/layouts
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const hbs = require('hbs');
-  hbs.registerPartials(join(__dirname, '..', 'views', 'partials'));
+  hbs.registerPartials(join(root, 'views', 'partials'));
 
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));

@@ -1,0 +1,9 @@
+<h1>Login</h1>
+{{#if error}}<div class="flash error">{{error}}</div>{{/if}}
+<form method="post" action="/login" style="max-width:360px">
+  <label>Email</label>
+  <input type="email" name="email" value="{{email}}" required autofocus/>
+  <label>Password</label>
+  <input type="password" name="password" required/>
+  <button type="submit" class="primary" style="margin-top:1rem">Sign in</button>
+</form>
