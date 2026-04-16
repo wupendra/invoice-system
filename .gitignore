@@ -4,17 +4,21 @@ node_modules/
 # build
 dist/
 
-# editor / IDE
-.idea/
-.vscode/
-.claude/
+# logs
+*.log
+npm-debug.log*
 
 # env
 .env
 .env.local
 
-# logs
-*.log
+# storage
+storage/
+
+# editor
+.idea/
+.vscode/
+*.iml
 
 # test
 coverage/
