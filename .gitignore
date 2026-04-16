@@ -1,0 +1,24 @@
+# deps
+node_modules/
+
+# build
+dist/
+
+# logs
+*.log
+npm-debug.log*
+
+# env
+.env
+.env.local
+
+# storage
+storage/
+
+# editor
+.idea/
+.vscode/
+*.iml
+
+# test
+coverage/

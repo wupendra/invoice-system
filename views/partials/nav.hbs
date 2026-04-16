@@ -1,0 +1,16 @@
+<header class="topnav">
+  <a href="/" class="brand">Aquester Invoice</a>
+  {{#if user}}
+    <nav>
+      <a href="/customers">Customers</a>
+      <a href="/invoices">Invoices</a>
+      {{#if isAdmin}}
+        <a href="/settings">Settings</a>
+        <a href="/users">Users</a>
+      {{/if}}
+      <form method="post" action="/logout" style="display:inline">
+        <button type="submit" class="link">Logout ({{user.email}})</button>
+      </form>
+    </nav>
+  {{/if}}
+</header>
