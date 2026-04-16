@@ -24,7 +24,7 @@ export class AuthController {
       });
       return res.redirect('/');
     } catch {
-      return res.render('pages/login', {
+      return res.status(200).render('pages/login', {
         title: 'Login', layout: 'layouts/main',
         error: 'Invalid email or password',
         email: dto.email,
