@@ -15,6 +15,10 @@ describe('Customers (e2e)', () => {
     adminCookie = await loginAndGetCookie(app, 'admin-cust@aquester.com', 'pw1');
     viewerCookie = await loginAndGetCookie(app, 'viewer-cust@aquester.com', 'pw1');
     const ds = app.get(DataSource);
+    await ds.query('DELETE FROM invoice_items');
+    await ds.query('DELETE FROM invoice_revisions');
+    await ds.query('DELETE FROM email_logs');
+    await ds.query('DELETE FROM invoices');
     await ds.query('DELETE FROM customer_cc_emails');
     await ds.query('DELETE FROM customers');
   });

@@ -24,6 +24,10 @@ describe('CustomersService (integration)', () => {
     }).compile();
     svc = mod.get(CustomersService);
     ds = mod.get(DataSource);
+    await ds.query('DELETE FROM invoice_items');
+    await ds.query('DELETE FROM invoice_revisions');
+    await ds.query('DELETE FROM email_logs');
+    await ds.query('DELETE FROM invoices');
     await ds.query('DELETE FROM customer_cc_emails');
     await ds.query('DELETE FROM customers');
   });
