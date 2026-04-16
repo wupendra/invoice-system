@@ -154,13 +154,15 @@ Single-row table (enforced by `id = 1`).
 3. Alpine.js manages line items: add row, remove row, live `line_total = qty × unit_cost`, live subtotal/VAT/grand total. Amount-in-words preview is computed client-side too and editable in a textarea.
 4. On submit, server validates (class-validator DTOs).
 5. In a single transaction:
-   - `SELECT … FOR UPDATE` on `invoice_counters[year]`, increment `last_number`, claim that as the invoice number.
+   - Try `SELECT … FOR UPDATE` on `invoice_counters[year]`. If no row exists (first invoice of a new year), `INSERT` a row with `last_number = 0` and re-select with the lock.
+   - Increment `last_number`, claim that as the invoice number.
    - Insert `invoices` row with `status = draft`, `revision = 1`.
    - Insert `invoice_items` rows.
 6. Generate PDF via Puppeteer → write to `storage/invoices/{year}-{number}-r1.pdf`.
 7. Redirect to `/invoices/:id` view page.
 
 ### 6.2 Edit invoice
+Editable fields: customer, invoice date, line items, amount-in-words text. The invoice number and year are immutable after creation.
 - If `status = draft`: update rows in place, regenerate PDF, overwrite the file.
 - If `status = sent` or `corrected`: snapshot current state into `invoice_revisions` (with the current PDF path), bump `invoices.revision`, update rows, regenerate PDF to `storage/invoices/{year}-{number}-r{n}.pdf`, set `status = corrected`. The previous PDF stays on disk for the customer's records.
 
@@ -175,11 +177,13 @@ Single-row table (enforced by `id = 1`).
 4. CC field is pre-filled from `customer_cc_emails`. Admin can add/remove addresses on this screen.
 5. Subject and CC are editable; "To" is locked to `customers.primary_email`.
 6. On send: Nodemailer sends with the *latest* PDF attached (`{year}-{number}-r{revision}.pdf`).
-7. On success: write `email_logs` row, set `invoices.status = sent` (if it was `draft`) and `sent_at = now()`. If it was already `sent` or `corrected`, only `email_logs` is appended; status stays `corrected`.
+7. On success: write `email_logs` row.
+   - If the invoice was `draft`: set `status = sent` and `sent_at = now()`.
+   - If it was already `sent` or `corrected`: leave `status` and `sent_at` unchanged; only `email_logs` is appended (so `sent_at` always reflects the *first* send, while `email_logs` is the full audit trail of every send).
 
 ### 6.4 Reset counter
-- `/settings/counter` shows current year's `last_number` and the *next* number that would be claimed.
-- "Reset to 0" button with a confirm dialog. After reset, the next invoice claims `0 + 1 → 001`.
+- `/settings/counter` shows the current calendar year's `last_number` and the *next* number that would be claimed.
+- "Reset to 0" button with a confirm dialog (acts on the current year only). After reset, the next invoice claims `0 + 1 → 001`. Past-year counters are not exposed.
 
 ### 6.5 Amount in words
 - Computed server-side using the `number-to-words` library.
