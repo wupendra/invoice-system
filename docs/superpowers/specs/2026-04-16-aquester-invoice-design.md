@@ -251,9 +251,9 @@ DB_PASS=...
 DB_NAME=aquester_invoice
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=465
-SMTP_USER=kamal@aquester.com
-SMTP_PASS=...              # Gmail App Password
-SMTP_FROM="Aquester Solutions <kamal@aquester.com>"
+SMTP_USER=u.silwal@gmail.com   # placeholder until aquester.com mailbox is ready
+SMTP_PASS=...                  # Gmail App Password
+SMTP_FROM="Aquester Solutions <u.silwal@gmail.com>"
 PDF_STORAGE_DIR=./storage/invoices
 ```
 
