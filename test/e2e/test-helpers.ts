@@ -17,6 +17,13 @@ export async function bootstrapTestApp(): Promise<INestApplication> {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const hbs = require('hbs');
   hbs.registerPartials(join(__dirname, '..', '..', 'views', 'partials'));
+  hbs.registerHelper('numFmt', (v: string | number) =>
+    Number(v).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+  );
+  hbs.registerHelper('nl2br', (s: string) => (s ?? '').toString().replace(/\n/g, '<br>'));
+  hbs.registerHelper('json', (v: unknown) => new (require('hbs')).SafeString(JSON.stringify(v ?? null)));
+  hbs.registerHelper('eq', (a: unknown, b: unknown) => String(a) === String(b));
+  hbs.registerHelper('padNum', (n: number) => String(n).padStart(3, '0'));
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   await app.init();
