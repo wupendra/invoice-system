@@ -9,6 +9,7 @@ import { buildTypeOrmOptions } from './config/typeorm.options';
 import { AuthModule } from './auth/auth.module';
 import { SettingsModule } from './settings/settings.module';
 import { CustomersModule } from './customers/customers.module';
+import { CountersModule } from './counters/counters.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -22,6 +23,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     AuthModule,
     SettingsModule,
     CustomersModule,
+    CountersModule,
   ],
   controllers: [AppController],
   providers: [
