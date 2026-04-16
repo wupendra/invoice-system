@@ -78,7 +78,8 @@ function invoiceForm(defaults, vatRate, currency) {
         if (num < 100) return tens[Math.floor(num/10)] + (num%10 ? '-' + ones[num%10] : '');
         if (num < 1000) return ones[Math.floor(num/100)] + ' hundred' + (num%100 ? ' ' + w(num%100) : '');
         if (num < 1_000_000) return w(Math.floor(num/1000)) + ' thousand' + (num%1000 ? ' ' + w(num%1000) : '');
-        return num.toString();
+        if (num < 1_000_000_000) return w(Math.floor(num/1_000_000)) + ' million' + (num%1_000_000 ? ' ' + w(num%1_000_000) : '');
+        return w(Math.floor(num/1_000_000_000)) + ' billion' + (num%1_000_000_000 ? ' ' + w(num%1_000_000_000) : '');
       }
       const whole = Math.floor(n); const cents = Math.round((n-whole)*100);
       let s = w(whole); s = s.charAt(0).toUpperCase() + s.slice(1);
