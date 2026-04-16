@@ -23,7 +23,7 @@ async function bootstrap() {
     Number(v).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
   );
   hbs.registerHelper('nl2br', (s: string) => (s ?? '').toString().replace(/\n/g, '<br>'));
-  hbs.registerHelper('json', (v: unknown) => new (require('hbs')).SafeString(JSON.stringify(v ?? null)));
+  hbs.registerHelper('json', (v: unknown) => JSON.stringify(v ?? null));
   hbs.registerHelper('eq', (a: unknown, b: unknown) => String(a) === String(b));
   hbs.registerHelper('padNum', (n: number) => String(n).padStart(3, '0'));
 
