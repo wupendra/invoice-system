@@ -13,6 +13,8 @@ export class SettingsController {
   @Get() @Render('pages/settings/form')
   async showForm(@CurrentUser() user: AuthUser) {
     const settings = await this.svc.get();
+    // NOTE: render-model key must NOT be 'settings' — Express's app.settings.views
+    // is shadowed by it and view resolution breaks. Always pass as 'appSettings'.
     return { title: 'Settings', layout: 'layouts/main', user, isAdmin: true, appSettings: settings };
   }
 

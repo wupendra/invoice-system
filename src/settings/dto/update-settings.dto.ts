@@ -1,4 +1,4 @@
-import { IsNumberString, IsString, MaxLength } from 'class-validator';
+import { IsEmail, IsNumberString, IsString, MaxLength } from 'class-validator';
 
 export class UpdateSettingsDto {
   @IsNumberString() vatRate!: string;
@@ -7,11 +7,11 @@ export class UpdateSettingsDto {
   @IsString() @MaxLength(255) fromCompanyName!: string;
   @IsString() fromAddress!: string;
   @IsString() @MaxLength(64) fromPan!: string;
-  @IsString() @MaxLength(255) fromEmail!: string;
+  @IsEmail() fromEmail!: string;
 
   @IsString() bankDetails!: string;
 
   @IsString() @MaxLength(255) contactName!: string;
-  @IsString() @MaxLength(255) contactEmail!: string;
+  @IsEmail() contactEmail!: string;
   @IsString() @MaxLength(64) contactPhone!: string;
 }

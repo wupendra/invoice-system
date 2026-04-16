@@ -75,4 +75,12 @@ describe('Customers (e2e)', () => {
       .get('/customers').set('Cookie', viewerCookie).expect(200);
     expect(res.text).toContain('Customers');
   });
+
+  it('viewer can view a customer detail page', async () => {
+    const ds = app.get(DataSource);
+    const [row] = await ds.query(`SELECT id FROM customers WHERE company_name='Acme Co.'`);
+    const res = await request(app.getHttpServer())
+      .get(`/customers/${row.id}`).set('Cookie', viewerCookie).expect(200);
+    expect(res.text).toContain('Acme Co.');
+  });
 });
