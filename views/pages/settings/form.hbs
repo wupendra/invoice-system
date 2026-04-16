@@ -1,0 +1,31 @@
+<h1>Settings</h1>
+<form method="post" action="/settings" style="max-width:640px">
+  <h2>Tax & currency</h2>
+  <label>VAT rate (%)</label>
+  <input name="vatRate" value="{{appSettings.vatRate}}" required/>
+  <label>Currency label</label>
+  <input name="currencyLabel" value="{{appSettings.currencyLabel}}" required/>
+
+  <h2>From-company block</h2>
+  <label>Company name</label>
+  <input name="fromCompanyName" value="{{appSettings.fromCompanyName}}" required/>
+  <label>Address</label>
+  <textarea name="fromAddress" rows="3" required>{{appSettings.fromAddress}}</textarea>
+  <label>PAN no.</label>
+  <input name="fromPan" value="{{appSettings.fromPan}}" required/>
+  <label>Email</label>
+  <input name="fromEmail" value="{{appSettings.fromEmail}}" required/>
+
+  <h2>Bank details</h2>
+  <textarea name="bankDetails" rows="3" required>{{appSettings.bankDetails}}</textarea>
+
+  <h2>Contact person</h2>
+  <label>Name</label>
+  <input name="contactName" value="{{appSettings.contactName}}" required/>
+  <label>Email</label>
+  <input name="contactEmail" value="{{appSettings.contactEmail}}" required/>
+  <label>Phone</label>
+  <input name="contactPhone" value="{{appSettings.contactPhone}}" required/>
+
+  <button type="submit" class="primary" style="margin-top:1rem">Save</button>
+</form>
