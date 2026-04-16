@@ -1,0 +1,18 @@
+<h1>{{title}}</h1>
+<form method="post" action="{{action}}" style="max-width:640px">
+  <label>Company name</label>
+  <input name="companyName" value="{{customer.companyName}}" required/>
+  <label>Registration / PAN number</label>
+  <input name="registrationNumber" value="{{customer.registrationNumber}}"/>
+  <label>Address</label>
+  <textarea name="address" rows="3" required>{{customer.address}}</textarea>
+  <label>Primary email</label>
+  <input type="email" name="primaryEmail" value="{{customer.primaryEmail}}" required/>
+  <label>Phone</label>
+  <input name="phone" value="{{customer.phone}}"/>
+  <label>CC emails (one per line)</label>
+  <textarea name="ccEmails" rows="3">{{ccEmailsText}}</textarea>
+  <label>Internal notes</label>
+  <textarea name="notes" rows="3">{{customer.notes}}</textarea>
+  <button type="submit" class="primary" style="margin-top:1rem">Save</button>
+</form>

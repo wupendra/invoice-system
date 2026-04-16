@@ -1,0 +1,22 @@
+<div style="display:flex; justify-content:space-between; align-items:center;">
+  <h1>Customers</h1>
+  {{#if isAdmin}}<a href="/customers/new" style="padding:0.5rem 0.9rem; background:#c69214; color:#fff; border-radius:4px; text-decoration:none;">+ New customer</a>{{/if}}
+</div>
+<form method="get" action="/customers" style="max-width:360px; margin-bottom:1rem">
+  <input name="q" value="{{q}}" placeholder="Search by company name"/>
+</form>
+<table>
+  <thead><tr><th>Company</th><th>Email</th><th>Phone</th><th></th></tr></thead>
+  <tbody>
+    {{#each customers}}
+      <tr>
+        <td><a href="/customers/{{this.id}}">{{this.companyName}}</a></td>
+        <td>{{this.primaryEmail}}</td>
+        <td>{{this.phone}}</td>
+        <td><a href="/invoices/new?customerId={{this.id}}">Create invoice</a></td>
+      </tr>
+    {{else}}
+      <tr><td colspan="4">No customers yet.</td></tr>
+    {{/each}}
+  </tbody>
+</table>
