@@ -1,0 +1,6 @@
+<h1>Invoice counter — {{year}}</h1>
+<p>Last claimed: <strong>{{lastNumber}}</strong></p>
+<p>Next invoice will be: <strong>{{nextNumber}}</strong></p>
+<form method="post" action="/settings/counter/reset" onsubmit="return confirm('Reset {{year}} counter to 0? Next invoice will be 001.');">
+  <button type="submit" class="primary danger" style="background:#b71c1c">Reset to 0</button>
+</form>
