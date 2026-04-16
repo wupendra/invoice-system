@@ -32,7 +32,7 @@ export class AuthController {
     }
   }
 
-  @Post('logout')
+  @Public() @Post('logout')
   logout(@Res() res: Response, @Req() _req: Request) {
     res.clearCookie('aq_token');
     return res.redirect('/login');
