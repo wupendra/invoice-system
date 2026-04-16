@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { validateEnv } from './config/env.validation';
 import { buildTypeOrmOptions } from './config/typeorm.options';
 import { AuthModule } from './auth/auth.module';
+import { SettingsModule } from './settings/settings.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -18,6 +19,7 @@ import { RolesGuard } from './common/guards/roles.guard';
       useFactory: (config: ConfigService) => buildTypeOrmOptions(config),
     }),
     AuthModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [
