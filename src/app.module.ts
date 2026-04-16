@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { SettingsModule } from './settings/settings.module';
 import { CustomersModule } from './customers/customers.module';
 import { CountersModule } from './counters/counters.module';
+import { InvoicesModule } from './invoices/invoices.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -24,6 +25,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     SettingsModule,
     CustomersModule,
     CountersModule,
+    InvoicesModule,
   ],
   controllers: [AppController],
   providers: [
