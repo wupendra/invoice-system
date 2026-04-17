@@ -78,4 +78,34 @@ describe('InvoicesService.create (integration)', () => {
     }, userId);
     expect(inv.invoiceNumber).toBe(2);
   });
+
+  it('edit after send creates a revision row, bumps revision, sets status=corrected', async () => {
+    const inv = await svc.create({
+      customerId, invoiceDate: `${YEAR}-09-22`,
+      items: [{ itemName: 'A', description: 'd', unitCost: '100', quantity: '1' }],
+    }, userId);
+
+    // simulate a send: flip status manually (real send ships in Task 4.5)
+    await ds.query(`UPDATE invoices SET status='sent', sent_at = NOW() WHERE id = ?`, [inv.id]);
+
+    const updated = await svc.update(inv.id, {
+      customerId, invoiceDate: `${YEAR}-09-23`,
+      items: [{ itemName: 'A-fixed', description: 'd', unitCost: '120', quantity: '1' }],
+    });
+
+    expect(updated.status).toBe('corrected');
+    expect(updated.revision).toBe(2);
+    expect(updated.subtotal).toBe('120.00');
+
+    const [row] = await ds.query('SELECT count(*) c FROM invoice_revisions WHERE invoice_id = ?', [inv.id]);
+    expect(Number(row.c)).toBe(1);
+
+    const [snapRow] = await ds.query(
+      'SELECT revision_number, snapshot_json FROM invoice_revisions WHERE invoice_id = ?', [inv.id],
+    );
+    expect(snapRow.revision_number).toBe(1);
+    const snap = typeof snapRow.snapshot_json === 'string' ? JSON.parse(snapRow.snapshot_json) : snapRow.snapshot_json;
+    expect(snap.items[0].itemName).toBe('A');
+    expect(snap.subtotal).toBe('100.00');
+  });
 });

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { randomUUID } from 'crypto';
@@ -73,7 +73,7 @@ export class InvoicesService {
     });
   }
 
-  async updateDraft(id: number, dto: InvoiceDto): Promise<Invoice> {
+  async update(id: number, dto: InvoiceDto): Promise<Invoice> {
     const settings = await this.settings.get();
     const totals = computeTotals(dto.items, settings.vatRate);
     const wordsDefault = amountInWords(totals.grandTotal, settings.currencyLabel);
@@ -82,10 +82,42 @@ export class InvoicesService {
     return this.ds.transaction(async (tx) => {
       const invRepo = tx.getRepository(Invoice);
       const itemRepo = tx.getRepository(InvoiceItem);
-      const current = await invRepo.findOne({ where: { id } });
+      const current = await invRepo.findOne({
+        where: { id }, relations: ['items', 'customer'],
+        order: { items: { sortOrder: 'ASC' } } as any,
+      });
       if (!current) throw new NotFoundException(`Invoice ${id} not found`);
-      if (current.status !== 'draft') {
-        throw new BadRequestException('Only draft invoices can be edited (revision flow comes in Phase 4)');
+
+      const wasSent = current.status === 'sent' || current.status === 'corrected';
+
+      if (wasSent) {
+        // Snapshot the current state into invoice_revisions (preserves what the customer received).
+        const fileName = `${current.year}-${String(current.invoiceNumber).padStart(3, '0')}-r${current.revision}.pdf`;
+        const pdfPath = `${this.config.get<string>('PDF_STORAGE_DIR') ?? './storage/invoices'}/${fileName}`;
+        await tx.query(
+          `INSERT INTO invoice_revisions (invoice_id, revision_number, snapshot_json, pdf_path)
+           VALUES (?, ?, ?, ?)`,
+          [id, current.revision, JSON.stringify({
+            invoiceNumber: current.invoiceNumber,
+            year: current.year,
+            customerId: current.customerId,
+            invoiceDate: current.invoiceDate,
+            subtotal: current.subtotal,
+            vatRate: current.vatRate,
+            vatAmount: current.vatAmount,
+            grandTotal: current.grandTotal,
+            amountInWords: current.amountInWords,
+            items: current.items.map((i) => ({
+              sortOrder: i.sortOrder,
+              itemName: i.itemName,
+              description: i.description,
+              unitCost: i.unitCost,
+              quantity: i.quantity,
+              quantityNote: i.quantityNote,
+              lineTotal: i.lineTotal,
+            })),
+          }), pdfPath],
+        );
       }
 
       Object.assign(current, {
@@ -95,6 +127,8 @@ export class InvoicesService {
         vatAmount: totals.vatAmount,
         grandTotal: totals.grandTotal,
         amountInWords: words,
+        revision: wasSent ? current.revision + 1 : current.revision,
+        status: wasSent ? 'corrected' as const : current.status,
       });
       await invRepo.save(current);
 
