@@ -55,4 +55,44 @@ describe('Invoices (e2e)', () => {
     expect(res.text).toContain('Acme');
     expect(res.text).toContain(`${YEAR}-001`);
   });
+
+  it('duplicate creates a new invoice with the same items and today date', async () => {
+    // First grab an existing invoice uuid (from the earlier test in this file)
+    const ds = app.get(DataSource);
+    const [src] = await ds.query('SELECT uuid, invoice_number FROM invoices ORDER BY id ASC LIMIT 1');
+    const sourceUuid = src.uuid;
+
+    const dup = await request(app.getHttpServer())
+      .post(`/invoices/${sourceUuid}/duplicate`).set('Cookie', adminCookie)
+      .expect(302);
+    const newPath = dup.headers.location;
+    expect(newPath).toMatch(/^\/invoices\/[0-9a-f-]{36}$/);
+    const newUuid = newPath.split('/').pop();
+    expect(newUuid).not.toBe(sourceUuid);
+
+    const [srcRow] = await ds.query('SELECT id FROM invoices WHERE uuid = ?', [sourceUuid]);
+    const [dupRow] = await ds.query(
+      'SELECT id, invoice_number, customer_id, invoice_date, status, revision FROM invoices WHERE uuid = ?',
+      [newUuid],
+    );
+    expect(dupRow.id).not.toBe(srcRow.id);
+    expect(dupRow.status).toBe('draft');
+    expect(dupRow.revision).toBe(1);
+    // Duplicate's date is today — service stores the UTC date string; MySQL may return it as a
+    // Date object (midnight local), so we normalise to the local YYYY-MM-DD for comparison.
+    const todayLocal = new Date().toLocaleDateString('sv-SE'); // 'sv-SE' gives YYYY-MM-DD in local tz
+    let dupDate: string;
+    if (typeof dupRow.invoice_date === 'string') {
+      dupDate = dupRow.invoice_date.slice(0, 10);
+    } else {
+      // Date object returned by MySQL driver — use local date parts to avoid UTC shift
+      const d = new Date(dupRow.invoice_date);
+      dupDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+    expect(dupDate).toBe(todayLocal);
+    // Items were copied
+    const srcItems = await ds.query('SELECT item_name, unit_cost, quantity FROM invoice_items WHERE invoice_id = ? ORDER BY sort_order', [srcRow.id]);
+    const dupItems = await ds.query('SELECT item_name, unit_cost, quantity FROM invoice_items WHERE invoice_id = ? ORDER BY sort_order', [dupRow.id]);
+    expect(dupItems).toEqual(srcItems);
+  }, 60_000);
 });

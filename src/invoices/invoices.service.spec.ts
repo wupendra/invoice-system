@@ -108,4 +108,35 @@ describe('InvoicesService.create (integration)', () => {
     expect(snap.items[0].itemName).toBe('A');
     expect(snap.subtotal).toBe('100.00');
   });
+
+  it('duplicate copies items and customer, claims next number, uses today', async () => {
+    const original = await svc.create({
+      customerId,
+      invoiceDate: `${YEAR}-09-22`,
+      items: [
+        { itemName: 'Original item', description: 'desc', unitCost: '500.00', quantity: '2', quantityNote: '2 months' },
+      ],
+    }, userId);
+
+    const copy = await svc.duplicate(original.uuid, userId);
+
+    expect(copy.id).not.toBe(original.id);
+    expect(copy.uuid).not.toBe(original.uuid);
+    expect(copy.invoiceNumber).toBe(original.invoiceNumber + 1);
+    expect(copy.customerId).toBe(original.customerId);
+    expect(copy.status).toBe('draft');
+    expect(copy.revision).toBe(1);
+    expect(copy.sentAt).toBeFalsy();
+    expect(copy.items.length).toBe(1);
+    expect(copy.items[0].itemName).toBe('Original item');
+    expect(copy.items[0].description).toBe('desc');
+    expect(copy.items[0].unitCost).toBe('500.00');
+    expect(copy.items[0].quantity).toBe('2.00');
+    expect(copy.items[0].quantityNote).toBe('2 months');
+    expect(copy.items[0].lineTotal).toBe('1000.00');
+
+    // Date is today (YYYY-MM-DD local)
+    const today = new Date().toLocaleDateString('sv-SE');
+    expect(copy.invoiceDate).toBe(today);
+  });
 });

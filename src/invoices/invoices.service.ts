@@ -169,6 +169,23 @@ export class InvoicesService {
     return inv;
   }
 
+  async duplicate(uuid: string, userId: number): Promise<Invoice> {
+    const source = await this.findByUuid(uuid);
+    const today = new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD in local tz
+    return this.create({
+      customerId: source.customerId,
+      invoiceDate: today,
+      items: source.items.map((it) => ({
+        itemName: it.itemName,
+        description: it.description,
+        unitCost: it.unitCost,
+        quantity: it.quantity,
+        quantityNote: it.quantityNote ?? undefined,
+      })),
+      // Leave amountInWords blank so create() auto-generates based on recomputed totals.
+    }, userId);
+  }
+
   async renderPdf(id: number): Promise<{ buffer: Buffer; path: string; diskFileName: string; downloadFileName: string; fileName: string }> {
     const invoice = await this.findOne(id);
     const settings = await this.settings.get();
