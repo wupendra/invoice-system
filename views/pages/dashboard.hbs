@@ -1,2 +1,18 @@
 <h1>Dashboard</h1>
 <p>Welcome, {{user.email}} ({{user.role}}).</p>
+
+<h2>Recent invoices</h2>
+<table>
+  <thead><tr><th>#</th><th>Date</th><th>Customer</th><th>Total</th><th>Status</th></tr></thead>
+  <tbody>
+    {{#each recent}}
+      <tr>
+        <td><a href="/invoices/{{this.uuid}}">{{this.year}}-{{padNum this.invoiceNumber}}</a></td>
+        <td>{{this.invoiceDate}}</td>
+        <td>{{this.customer.companyName}}</td>
+        <td>{{numFmt this.grandTotal}}</td>
+        <td>{{this.status}}</td>
+      </tr>
+    {{else}}<tr><td colspan="5">No invoices yet. <a href="/invoices/new">Create one</a></td></tr>{{/each}}
+  </tbody>
+</table>
