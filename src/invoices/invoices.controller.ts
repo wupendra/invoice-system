@@ -1,5 +1,5 @@
 import {
-  BadRequestException, Body, Controller, Get, Param, ParseIntPipe, Post, Query, Render, Res,
+  BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Render, Res,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { InvoicesService } from './invoices.service';
@@ -61,17 +61,14 @@ export class InvoicesController {
   @Roles('admin') @Post('new')
   async createSubmit(@Body() dto: InvoiceDto, @CurrentUser() user: AuthUser, @Res() res: Response) {
     const inv = await this.svc.create(dto, user.id);
-    // Pre-generate PDF so download is instant. Don't fail the create if PDF render errors —
-    // the user can retry by clicking Download on the view page.
     try { await this.svc.renderPdf(inv.id); } catch (e) { console.error('PDF pre-gen failed:', e); }
-    return res.redirect(`/invoices/${inv.id}`);
+    return res.redirect(`/invoices/${inv.uuid}`);
   }
 
-  @Roles('admin') @Get(':id/edit') @Render('pages/invoices/form')
-  async editForm(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
-    const invoice = await this.svc.findOne(id);
+  @Roles('admin') @Get(':uuid/edit') @Render('pages/invoices/form')
+  async editForm(@Param('uuid', ParseUUIDPipe) uuid: string, @CurrentUser() user: AuthUser) {
+    const invoice = await this.svc.findByUuid(uuid);
     if (invoice.status !== 'draft') {
-      // Phase 4 will handle sent/corrected edit via revision. For now reject with 400.
       throw new BadRequestException('Only draft invoices can be edited right now');
     }
     const customers = await this.customers.list();
@@ -79,7 +76,7 @@ export class InvoicesController {
     return {
       title: `Edit invoice ${String(invoice.invoiceNumber).padStart(3, '0')}`,
       layout: 'layouts/main', user, isAdmin: true,
-      action: `/invoices/${id}/edit`, mode: 'edit',
+      action: `/invoices/${uuid}/edit`, mode: 'edit',
       customers, appSettings,
       defaults: {
         customerId: invoice.customerId,
@@ -96,20 +93,21 @@ export class InvoicesController {
     };
   }
 
-  @Roles('admin') @Post(':id/edit')
+  @Roles('admin') @Post(':uuid/edit')
   async editSubmit(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('uuid', ParseUUIDPipe) uuid: string,
     @Body() dto: InvoiceDto,
     @Res() res: Response,
   ) {
-    await this.svc.updateDraft(id, dto);
-    try { await this.svc.renderPdf(id); } catch (e) { console.error('PDF regen failed:', e); }
-    return res.redirect(`/invoices/${id}`);
+    const invoice = await this.svc.findByUuid(uuid);
+    await this.svc.updateDraft(invoice.id, dto);
+    try { await this.svc.renderPdf(invoice.id); } catch (e) { console.error('PDF regen failed:', e); }
+    return res.redirect(`/invoices/${uuid}`);
   }
 
-  @Get(':id') @Render('pages/invoices/view')
-  async view(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
-    const invoice = await this.svc.findOne(id);
+  @Get(':uuid') @Render('pages/invoices/view')
+  async view(@Param('uuid', ParseUUIDPipe) uuid: string, @CurrentUser() user: AuthUser) {
+    const invoice = await this.svc.findByUuid(uuid);
     const appSettings = await this.settings.get();
     const logoSrc = `/public/logo.png`;
     const model = buildPdfModel(invoice, appSettings, logoSrc);
@@ -119,9 +117,10 @@ export class InvoicesController {
     };
   }
 
-  @Get(':id/pdf')
-  async pdf(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
-    const { buffer, fileName } = await this.svc.renderPdf(id);
+  @Get(':uuid/pdf')
+  async pdf(@Param('uuid', ParseUUIDPipe) uuid: string, @Res() res: Response) {
+    const invoice = await this.svc.findByUuid(uuid);
+    const { buffer, fileName } = await this.svc.renderPdf(invoice.id);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
     return res.end(buffer);

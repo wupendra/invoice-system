@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
+import { randomUUID } from 'crypto';
 import { Invoice } from '../entities/invoice.entity';
 import { InvoiceItem } from '../entities/invoice-item.entity';
 import { CountersService } from '../counters/counters.service';
@@ -38,6 +39,7 @@ export class InvoicesService {
       const itemRepo = tx.getRepository(InvoiceItem);
 
       const invoice = await invRepo.save(invRepo.create({
+        uuid: randomUUID(),
         invoiceNumber: number,
         year,
         customerId: dto.customerId,
@@ -118,6 +120,16 @@ export class InvoicesService {
       order: { items: { sortOrder: 'ASC' } } as any,
     });
     if (!inv) throw new NotFoundException(`Invoice ${id} not found`);
+    return inv;
+  }
+
+  async findByUuid(uuid: string): Promise<Invoice> {
+    const inv = await this.ds.getRepository(Invoice).findOne({
+      where: { uuid },
+      relations: ['items', 'customer'],
+      order: { items: { sortOrder: 'ASC' } } as any,
+    });
+    if (!inv) throw new NotFoundException(`Invoice ${uuid} not found`);
     return inv;
   }
 

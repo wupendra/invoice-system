@@ -40,11 +40,11 @@ describe('Invoices (e2e)', () => {
       })
       .expect(302);
     const newPath = create.headers.location;
-    expect(newPath).toMatch(/^\/invoices\/\d+$/);
-    const id = Number(newPath.split('/').pop());
+    expect(newPath).toMatch(/^\/invoices\/[0-9a-f-]{36}$/);
+    const uuid = newPath.split('/').pop() as string;
 
     const pdf = await request(app.getHttpServer())
-      .get(`/invoices/${id}/pdf`).set('Cookie', adminCookie).expect(200);
+      .get(`/invoices/${uuid}/pdf`).set('Cookie', adminCookie).expect(200);
     expect(pdf.headers['content-type']).toBe('application/pdf');
     expect(pdf.body.slice(0, 4).toString()).toBe('%PDF');
   }, 60_000);
