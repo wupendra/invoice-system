@@ -1,0 +1,96 @@
+<h1>{{title}}</h1>
+<form method="post" action="{{action}}" x-data="invoiceForm({{json defaults}}, {{appSettings.vatRate}}, '{{appSettings.currencyLabel}}')" @submit="onSubmit($event)">
+  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; max-width:720px">
+    <div>
+      <label>Customer</label>
+      <select name="customerId" x-model="form.customerId" required>
+        {{#each customers}}<option value="{{this.id}}">{{this.companyName}}</option>{{/each}}
+      </select>
+    </div>
+    <div>
+      <label>Invoice date</label>
+      <input type="date" name="invoiceDate" x-model="form.invoiceDate" required/>
+    </div>
+    <div>
+      <label>Invoice number (auto)</label>
+      <input value="{{defaults.nextNumber}}" disabled/>
+    </div>
+  </div>
+
+  <h2>Items</h2>
+  <table>
+    <thead><tr><th>Item</th><th>Description</th><th>Unit cost</th><th>Qty</th><th>Qty note</th><th>Total</th><th></th></tr></thead>
+    <tbody>
+      <template x-for="(it, i) in form.items" :key="i">
+        <tr>
+          <td><input :name="`items[${i}][itemName]`" x-model="it.itemName" required></td>
+          <td><textarea :name="`items[${i}][description]`" x-model="it.description" rows="2" required></textarea></td>
+          <td><input type="number" step="0.01" :name="`items[${i}][unitCost]`" x-model="it.unitCost" @input="recalc()" required></td>
+          <td><input type="number" step="0.01" :name="`items[${i}][quantity]`" x-model="it.quantity" @input="recalc()" required></td>
+          <td><input :name="`items[${i}][quantityNote]`" x-model="it.quantityNote" placeholder="e.g. 8 X 3 (months)"></td>
+          <td x-text="formatMoney(lineTotal(it))"></td>
+          <td><button type="button" @click="removeRow(i)" style="background:none; border:1px solid #ccc; border-radius:4px; padding:0.2rem 0.5rem; cursor:pointer; color:#b71c1c;">×</button></td>
+        </tr>
+      </template>
+    </tbody>
+  </table>
+  <button type="button" @click="addRow()" style="margin-top:0.5rem; padding:0.5rem 0.9rem; background:#fff; border:1px solid #c69214; color:#c69214; border-radius:4px; cursor:pointer; font-weight:600;">+ Add row</button>
+
+  <div style="margin-top:1rem; max-width:360px; margin-left:auto; text-align:right">
+    <div>Subtotal: <strong x-text="formatMoney(subtotal)"></strong></div>
+    <div>VAT <span x-text="vatRate"></span>%: <strong x-text="formatMoney(vatAmount)"></strong></div>
+    <div style="font-size:1.1rem">Total: <strong x-text="formatMoney(grandTotal)"></strong></div>
+  </div>
+
+  <div style="margin-top:1rem; max-width:560px">
+    <label>Amount in words (auto, editable)</label>
+    <textarea name="amountInWords" x-model="form.amountInWords" rows="2"></textarea>
+  </div>
+
+  <button type="submit" class="primary" style="margin-top:1rem">Save invoice</button>
+</form>
+
+<script src="/public/alpine.min.js" defer></script>
+<script>
+function invoiceForm(defaults, vatRate, currency) {
+  return {
+    form: defaults,
+    vatRate: vatRate,
+    init() { this.recalc(); },
+    addRow() { this.form.items.push({ itemName:'', description:'', unitCost:'', quantity:'1', quantityNote:'' }); this.recalc(); },
+    removeRow(i) { this.form.items.splice(i,1); if (this.form.items.length === 0) this.addRow(); this.recalc(); },
+    lineTotal(it) { const u = Number(it.unitCost) || 0; const q = Number(it.quantity) || 0; return Math.round(u*q*100)/100; },
+    get subtotal() { return Math.round(this.form.items.reduce((a,it)=>a + this.lineTotal(it), 0) * 100) / 100; },
+    get vatAmount() { return Math.round(this.subtotal * (Number(this.vatRate)/100) * 100) / 100; },
+    get grandTotal() { return Math.round((this.subtotal + this.vatAmount) * 100) / 100; },
+    formatMoney(n) { return Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
+    recalc() {
+      // amount-in-words: lazy regen (only if user hasn't typed)
+      if (!this.form.amountInWords || this.form.amountInWords.startsWith('(auto) ')) {
+        this.form.amountInWords = '(auto) ' + this.toWords(this.grandTotal) + ' ' + currency + ' only.';
+      }
+    },
+    toWords(n) {
+      const ones=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+      const tens=['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+      function w(num){
+        if (num < 20) return ones[num];
+        if (num < 100) return tens[Math.floor(num/10)] + (num%10 ? '-' + ones[num%10] : '');
+        if (num < 1000) return ones[Math.floor(num/100)] + ' hundred' + (num%100 ? ' ' + w(num%100) : '');
+        if (num < 1_000_000) return w(Math.floor(num/1000)) + ' thousand' + (num%1000 ? ' ' + w(num%1000) : '');
+        if (num < 1_000_000_000) return w(Math.floor(num/1_000_000)) + ' million' + (num%1_000_000 ? ' ' + w(num%1_000_000) : '');
+        return w(Math.floor(num/1_000_000_000)) + ' billion' + (num%1_000_000_000 ? ' ' + w(num%1_000_000_000) : '');
+      }
+      const whole = Math.floor(n); const cents = Math.round((n-whole)*100);
+      let s = w(whole); s = s.charAt(0).toUpperCase() + s.slice(1);
+      return cents ? s + ' ' + currency + ' and ' + w(cents) + ' paisa' : s;
+    },
+    onSubmit(e) {
+      // strip the (auto) tag if user didn't edit
+      if (this.form.amountInWords.startsWith('(auto) ')) {
+        this.form.amountInWords = this.form.amountInWords.slice(7);
+      }
+    },
+  };
+}
+</script>

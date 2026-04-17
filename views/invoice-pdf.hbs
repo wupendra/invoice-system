@@ -1,0 +1,107 @@
+<!doctype html>
+<html><head><meta charset="utf-8"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; font-family: Arial, sans-serif; color: #333; font-size: 11pt; }
+  .page { padding: 0; }
+  header.bands { display: grid; grid-template-columns: 1fr 1.4fr 1.4fr; gap: 1.5rem;
+    align-items: center; padding-bottom: 0.75rem; border-bottom: 2px solid #222; }
+  header.bands img.logo { max-width: 200px; max-height: 90px; }
+  header.bands .col { padding: 0 1rem; border-left: 1px solid #ccc; }
+  header.bands .col.first { border-left: 0; }
+  header.bands .label { font-weight: 700; color: #555; letter-spacing: 0.05em; }
+  header.bands .name { font-weight: 700; }
+  header.bands .to-name { font-weight: 700; }
+  .title { text-align: center; margin: 2.5rem 0 2rem; }
+  .title .pill { display: inline-block; background: #e89c1f; color: #111; font-weight: 800;
+    font-style: italic; padding: 0.6rem 2.5rem; border-radius: 999px; font-size: 24pt; }
+  .meta { display: flex; gap: 3rem; padding: 0 0 1.5rem 0; font-weight: 700; }
+  .meta .label { color: #555; }
+  table.items { width: 100%; border-collapse: collapse; }
+  table.items th, table.items td { padding: 0.6rem 0.8rem; text-align: left; vertical-align: top; }
+  table.items th { color: #555; font-weight: 700; border-bottom: 0; }
+  table.items td { border-left: 1px solid #ccc; }
+  table.items td:first-child, table.items th:first-child { border-left: 0; }
+  table.items td.num, table.items th.num { text-align: right; white-space: nowrap; }
+  table.items td.qty { text-align: center; }
+  .totals { width: 100%; margin-top: 1rem; border-collapse: collapse; }
+  .totals td { padding: 0.4rem 0.8rem; }
+  .totals td.label { text-align: right; font-weight: 700; }
+  .totals td.value { text-align: right; font-weight: 700; white-space: nowrap; width: 140px; }
+  .totals tr.grand td { font-size: 14pt; }
+  .in-words { margin-top: 1rem; font-weight: 700; }
+  footer { margin-top: 3rem; font-size: 11pt; line-height: 1.5; }
+  footer .block { font-weight: 700; }
+  .correction { margin-top: 1rem; padding: 0.6rem 0.8rem; background: #fff7e0;
+    border-left: 4px solid #e89c1f; font-style: italic; }
+</style></head>
+<body><div class="page">
+  <header class="bands">
+    <div class="col first">
+      <img class="logo" src="{{logoSrc}}" alt="Aquester"/>
+    </div>
+    <div class="col">
+      <div class="label">FROM:</div>
+      <div class="name">{{settings.fromCompanyName}}</div>
+      <div>{{{nl2br settings.fromAddress}}}</div>
+      <div>PAN No. {{settings.fromPan}}</div>
+      <div>{{settings.fromEmail}}</div>
+    </div>
+    <div class="col">
+      <div class="label">TO:</div>
+      <div class="to-name">{{customer.companyName}}</div>
+      <div>{{{nl2br customer.address}}}</div>
+      {{#if customer.registrationNumber}}<div>Reg/PAN: {{customer.registrationNumber}}</div>{{/if}}
+    </div>
+  </header>
+
+  <div class="title"><span class="pill">Invoice</span></div>
+
+  <div class="meta">
+    <div><span class="label">INVOICE NO.</span> {{invoiceNumberPadded}}</div>
+    <div><span class="label">INVOICE DATE:</span> {{invoiceDateFormatted}}</div>
+  </div>
+
+  {{#if isCorrection}}
+    <div class="correction">Correction notice — please discard the previously issued copy of invoice {{invoiceNumberPadded}}.</div>
+  {{/if}}
+
+  <table class="items">
+    <thead>
+      <tr>
+        <th>ITEM</th><th>DESCRIPTION</th>
+        <th class="num">UNIT COST</th><th class="qty">QUANTITY</th><th class="num">TOTAL</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each items}}
+        <tr>
+          <td>{{this.itemName}}</td>
+          <td>{{this.description}}</td>
+          <td class="num">{{numFmt this.unitCost}}</td>
+          <td class="qty">
+            {{numFmt this.quantity}}
+            {{#if this.quantityNote}}<br><small>{{this.quantityNote}}</small>{{/if}}
+          </td>
+          <td class="num">{{numFmt this.lineTotal}}</td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+
+  <table class="totals">
+    <tr><td class="label">Subtotal</td><td class="value">{{numFmt subtotal}}</td></tr>
+    <tr><td class="label">VAT {{vatRateFmt}}%</td><td class="value">{{numFmt vatAmount}}</td></tr>
+    <tr class="grand"><td class="label">Total</td><td class="value">{{numFmt grandTotal}}</td></tr>
+  </table>
+
+  <p class="in-words">In words: {{amountInWords}}</p>
+
+  <footer>
+    <div class="block">{{{nl2br settings.bankDetails}}}</div>
+    <p>If you have any questions regarding this invoice, please contact:</p>
+    <div class="block">{{settings.contactName}}</div>
+    <div class="block">{{settings.contactEmail}}</div>
+    <div class="block">Phone: {{settings.contactPhone}}</div>
+  </footer>
+</div></body></html>

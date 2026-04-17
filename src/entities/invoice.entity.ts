@@ -12,6 +12,7 @@ export type InvoiceStatus = 'draft' | 'sent' | 'corrected';
 @Unique('uq_invoice_year_number', ['year', 'invoiceNumber'])
 export class Invoice {
   @PrimaryGeneratedColumn() id!: number;
+  @Column({ unique: true, length: 36 }) uuid!: string;
   @Column({ name: 'invoice_number', type: 'int' }) invoiceNumber!: number;
   @Column({ type: 'int' }) year!: number;
 
