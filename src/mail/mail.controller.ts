@@ -33,8 +33,8 @@ export class MailController {
       invoice,
       to: customer.primaryEmail,
       ccText: customer.ccEmails.map((e) => e.email).join('\n'),
-      subject: this.mail.buildSubject(invoice),
-      bodyHtml: this.mail.buildBody(invoice),
+      subject: await this.mail.buildSubject(invoice),
+      bodyHtml: await this.mail.buildBody(invoice),
     };
   }
 

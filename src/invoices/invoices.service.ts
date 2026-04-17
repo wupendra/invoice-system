@@ -124,6 +124,7 @@ export class InvoicesService {
         customerId: dto.customerId,
         invoiceDate: dto.invoiceDate,
         subtotal: totals.subtotal,
+        vatRate: settings.vatRate,      // <-- NEW: keep stored rate in sync with totals
         vatAmount: totals.vatAmount,
         grandTotal: totals.grandTotal,
         amountInWords: words,
@@ -193,13 +194,14 @@ export class InvoicesService {
     return { buffer, path, fileName };
   }
 
-  list(filters: { year?: number; customerId?: number; status?: string }): Promise<Invoice[]> {
+  list(filters: { year?: number; customerId?: number; status?: string; limit?: number }): Promise<Invoice[]> {
     const qb = this.ds.getRepository(Invoice).createQueryBuilder('inv')
       .leftJoinAndSelect('inv.customer', 'customer')
       .orderBy('inv.year', 'DESC').addOrderBy('inv.invoiceNumber', 'DESC');
     if (filters.year) qb.andWhere('inv.year = :year', { year: filters.year });
     if (filters.customerId) qb.andWhere('inv.customerId = :cid', { cid: filters.customerId });
     if (filters.status) qb.andWhere('inv.status = :status', { status: filters.status });
+    if (filters.limit) qb.take(filters.limit);
     return qb.getMany();
   }
 }

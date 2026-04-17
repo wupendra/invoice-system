@@ -22,8 +22,8 @@ describe('Email (e2e, mocked SMTP)', () => {
     const mod = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(MailService)
       .useValue({
-        buildSubject: (inv: any) => `Invoice #${String(inv.invoiceNumber).padStart(3,'0')} from Aquester Solutions Pvt. Ltd.`,
-        buildBody: (inv: any) => `<p>#${String(inv.invoiceNumber).padStart(3,'0')}</p>`,
+        buildSubject: async (inv: any) => `Invoice #${String(inv.invoiceNumber).padStart(3,'0')} from Aquester Solutions Pvt. Ltd.`,
+        buildBody: async (inv: any) => `<p>#${String(inv.invoiceNumber).padStart(3,'0')}</p>`,
         send: async (opts: any) => { sent.push(opts); },
       })
       .compile();

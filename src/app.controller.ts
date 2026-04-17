@@ -8,7 +8,7 @@ export class AppController {
 
   @Get() @Render('pages/dashboard')
   async dashboard(@CurrentUser() user: AuthUser) {
-    const recent = (await this.invoices.list({})).slice(0, 10);
+    const recent = await this.invoices.list({ limit: 10 });
     return {
       title: 'Dashboard', layout: 'layouts/main',
       user, isAdmin: user.role === 'admin', recent,
