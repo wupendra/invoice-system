@@ -48,10 +48,10 @@ export class MailController {
     const invoice = await this.invoices.findByUuid(uuid);
     const customer = await this.customers.findOne(invoice.customerId);
 
-    let buffer: Buffer; let fileName: string;
+    let buffer: Buffer; let downloadFileName: string;
     try {
       const r = await this.invoices.renderPdf(invoice.id);
-      buffer = r.buffer; fileName = r.fileName;
+      buffer = r.buffer; downloadFileName = r.downloadFileName;
     } catch (e: any) {
       return res.render('pages/invoices/email', {
         title: 'Email invoice', layout: 'layouts/main', user, isAdmin: true,
@@ -67,7 +67,7 @@ export class MailController {
         cc: dto.ccEmails,
         subject: dto.subject,
         html: dto.bodyHtml,
-        attachment: { filename: fileName, content: buffer },
+        attachment: { filename: downloadFileName, content: buffer },
       });
     } catch (e: any) {
       return res.render('pages/invoices/email', {

@@ -119,9 +119,9 @@ export class InvoicesController {
   @Get(':uuid/pdf')
   async pdf(@Param('uuid', ParseUUIDPipe) uuid: string, @Res() res: Response) {
     const invoice = await this.svc.findByUuid(uuid);
-    const { buffer, fileName } = await this.svc.renderPdf(invoice.id);
+    const { buffer, downloadFileName } = await this.svc.renderPdf(invoice.id);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
+    res.setHeader('Content-Disposition', `inline; filename="${downloadFileName}"`);
     return res.end(buffer);
   }
 }

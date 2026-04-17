@@ -84,7 +84,7 @@ describe('Email (e2e, mocked SMTP)', () => {
     expect(sent.length).toBe(1);
     expect(sent[0].to).toBe('to@example.com');
     expect(sent[0].cc).toEqual(['cc1@example.com', 'cc2@example.com']);
-    expect(sent[0].attachment.filename).toMatch(/-r1\.pdf$/);
+    expect(sent[0].attachment.filename).toBe(`acme-${YEAR}-09-22.pdf`);
     expect(sent[0].attachment.content.slice(0,4).toString()).toBe('%PDF');
 
     const ds = app.get(DataSource);
