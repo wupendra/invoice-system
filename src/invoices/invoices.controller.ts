@@ -104,6 +104,17 @@ export class InvoicesController {
     return res.redirect(`/invoices/${uuid}`);
   }
 
+  @Roles('admin') @Post(':uuid/duplicate')
+  async duplicateInvoice(
+    @Param('uuid', ParseUUIDPipe) uuid: string,
+    @CurrentUser() user: AuthUser,
+    @Res() res: Response,
+  ) {
+    const inv = await this.svc.duplicate(uuid, user.id);
+    try { await this.svc.renderPdf(inv.id); } catch (e) { console.error('PDF pre-gen failed:', e); }
+    return res.redirect(`/invoices/${inv.uuid}`);
+  }
+
   @Get(':uuid') @Render('pages/invoices/view')
   async view(@Param('uuid', ParseUUIDPipe) uuid: string, @CurrentUser() user: AuthUser) {
     const invoice = await this.svc.findByUuid(uuid);
@@ -119,9 +130,9 @@ export class InvoicesController {
   @Get(':uuid/pdf')
   async pdf(@Param('uuid', ParseUUIDPipe) uuid: string, @Res() res: Response) {
     const invoice = await this.svc.findByUuid(uuid);
-    const { buffer, fileName } = await this.svc.renderPdf(invoice.id);
+    const { buffer, downloadFileName } = await this.svc.renderPdf(invoice.id);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
+    res.setHeader('Content-Disposition', `inline; filename="${downloadFileName}"`);
     return res.end(buffer);
   }
 }

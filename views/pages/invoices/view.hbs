@@ -4,6 +4,11 @@
     <a href="/invoices/{{invoice.uuid}}/pdf" style="padding:0.5rem 0.9rem; background:#c69214; color:#fff; border-radius:4px; text-decoration:none;">Download PDF</a>
     {{#if isAdmin}}<a href="/invoices/{{invoice.uuid}}/edit" style="margin-left:0.75rem">Edit</a>{{/if}}
     {{#if isAdmin}}<a href="/invoices/{{invoice.uuid}}/email" style="margin-left:0.75rem">Email</a>{{/if}}
+    {{#if isAdmin}}
+    <form method="post" action="/invoices/{{invoice.uuid}}/duplicate" style="display:inline; margin-left:0.75rem;">
+      <button type="submit" style="background:none; border:1px solid #c69214; color:#c69214; padding:0.4rem 0.8rem; border-radius:4px; cursor:pointer; font:inherit;">Duplicate</button>
+    </form>
+    {{/if}}
   </div>
 </div>
 <iframe src="/invoices/{{invoice.uuid}}/pdf" style="width:100%; height:1100px; border:1px solid #ddd"></iframe>

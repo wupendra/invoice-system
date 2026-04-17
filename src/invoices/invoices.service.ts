@@ -7,6 +7,7 @@ import { InvoiceItem } from '../entities/invoice-item.entity';
 import { CountersService } from '../counters/counters.service';
 import { SettingsService } from '../settings/settings.service';
 import { computeLineTotal, computeTotals } from '../common/helpers/money';
+import { slugify } from '../common/helpers/slugify';
 import { amountInWords } from '../common/helpers/amount-in-words';
 import { InvoiceDto } from './dto/invoice.dto';
 import { ConfigService } from '@nestjs/config';
@@ -168,7 +169,24 @@ export class InvoicesService {
     return inv;
   }
 
-  async renderPdf(id: number): Promise<{ buffer: Buffer; path: string; fileName: string }> {
+  async duplicate(uuid: string, userId: number): Promise<Invoice> {
+    const source = await this.findByUuid(uuid);
+    const today = new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD in local tz
+    return this.create({
+      customerId: source.customerId,
+      invoiceDate: today,
+      items: source.items.map((it) => ({
+        itemName: it.itemName,
+        description: it.description,
+        unitCost: it.unitCost,
+        quantity: it.quantity,
+        quantityNote: it.quantityNote ?? undefined,
+      })),
+      // Leave amountInWords blank so create() auto-generates based on recomputed totals.
+    }, userId);
+  }
+
+  async renderPdf(id: number): Promise<{ buffer: Buffer; path: string; diskFileName: string; downloadFileName: string; fileName: string }> {
     const invoice = await this.findOne(id);
     const settings = await this.settings.get();
     const logoAbs = resolve(settings.logoPath ?? 'public/logo.png');
@@ -189,9 +207,10 @@ export class InvoicesService {
     const tpl = Hbs.handlebars.compile(tplSrc);
     const html = tpl(buildPdfModel(invoice, settings, logoSrc));
     const buffer = await this.pdf.renderHtmlToBuffer(html);
-    const fileName = `${invoice.year}-${String(invoice.invoiceNumber).padStart(3, '0')}-r${invoice.revision}.pdf`;
-    const path = await this.pdf.writeBufferToDisk(buffer, fileName);
-    return { buffer, path, fileName };
+    const diskFileName = `${invoice.year}-${String(invoice.invoiceNumber).padStart(3, '0')}-r${invoice.revision}.pdf`;
+    const downloadFileName = `${slugify(invoice.customer?.companyName ?? 'invoice')}-${invoice.invoiceDate}.pdf`;
+    const path = await this.pdf.writeBufferToDisk(buffer, diskFileName);
+    return { buffer, path, diskFileName, downloadFileName, fileName: downloadFileName };
   }
 
   list(filters: { year?: number; customerId?: number; status?: string; limit?: number }): Promise<Invoice[]> {
