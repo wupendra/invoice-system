@@ -208,7 +208,7 @@ export class InvoicesService {
     const html = tpl(buildPdfModel(invoice, settings, logoSrc));
     const buffer = await this.pdf.renderHtmlToBuffer(html);
     const diskFileName = `${invoice.year}-${String(invoice.invoiceNumber).padStart(3, '0')}-r${invoice.revision}.pdf`;
-    const downloadFileName = `${slugify(invoice.customer?.companyName ?? 'invoice')}-${invoice.invoiceDate}.pdf`;
+    const downloadFileName = `${slugify(invoice.customer?.companyName ?? 'invoice')}-${invoice.year}-${String(invoice.invoiceNumber).padStart(3, '0')}-${invoice.invoiceDate}.pdf`;
     const path = await this.pdf.writeBufferToDisk(buffer, diskFileName);
     return { buffer, path, diskFileName, downloadFileName, fileName: downloadFileName };
   }
