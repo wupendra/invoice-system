@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { Invoice } from '../entities/invoice.entity';
@@ -71,6 +71,46 @@ export class InvoicesService {
     });
   }
 
+  async updateDraft(id: number, dto: InvoiceDto): Promise<Invoice> {
+    const settings = await this.settings.get();
+    const totals = computeTotals(dto.items, settings.vatRate);
+    const wordsDefault = amountInWords(totals.grandTotal, settings.currencyLabel);
+    const words = dto.amountInWords?.trim() || wordsDefault;
+
+    return this.ds.transaction(async (tx) => {
+      const invRepo = tx.getRepository(Invoice);
+      const itemRepo = tx.getRepository(InvoiceItem);
+      const current = await invRepo.findOne({ where: { id } });
+      if (!current) throw new NotFoundException(`Invoice ${id} not found`);
+      if (current.status !== 'draft') {
+        throw new BadRequestException('Only draft invoices can be edited (revision flow comes in Phase 4)');
+      }
+
+      Object.assign(current, {
+        customerId: dto.customerId,
+        invoiceDate: dto.invoiceDate,
+        subtotal: totals.subtotal,
+        vatAmount: totals.vatAmount,
+        grandTotal: totals.grandTotal,
+        amountInWords: words,
+      });
+      await invRepo.save(current);
+
+      await itemRepo.delete({ invoiceId: id });
+      await itemRepo.save(dto.items.map((it, idx) => ({
+        invoiceId: id, sortOrder: idx,
+        itemName: it.itemName, description: it.description,
+        unitCost: it.unitCost, quantity: it.quantity, quantityNote: it.quantityNote,
+        lineTotal: computeLineTotal(it.unitCost, it.quantity),
+      })));
+
+      return invRepo.findOneOrFail({
+        where: { id }, relations: ['items', 'customer'],
+        order: { items: { sortOrder: 'ASC' } } as any,
+      });
+    });
+  }
+
   async findOne(id: number): Promise<Invoice> {
     const inv = await this.ds.getRepository(Invoice).findOne({
       where: { id },
@@ -85,7 +125,18 @@ export class InvoicesService {
     const invoice = await this.findOne(id);
     const settings = await this.settings.get();
     const logoAbs = resolve(settings.logoPath ?? 'public/logo.png');
-    const logoSrc = `file://${logoAbs}`;
+    let logoSrc = '';
+    try {
+      const { readFile: readFileAsync } = await import('fs/promises');
+      const logoBuf = await readFileAsync(logoAbs);
+      // Sniff extension → mime
+      const ext = logoAbs.toLowerCase().split('.').pop() ?? 'png';
+      const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : ext === 'svg' ? 'image/svg+xml' : 'image/png';
+      logoSrc = `data:${mime};base64,${logoBuf.toString('base64')}`;
+    } catch {
+      // If the logo file is missing or unreadable, fall back to empty src — PDF still renders.
+      logoSrc = '';
+    }
     const tplPath = resolve('views/invoice-pdf.hbs');
     const tplSrc = await readFile(tplPath, 'utf8');
     const tpl = Hbs.handlebars.compile(tplSrc);
