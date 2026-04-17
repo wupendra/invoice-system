@@ -2,7 +2,13 @@
   <h1>Invoice {{model.invoiceNumberPadded}} — {{model.customer.companyName}}</h1>
   <div>
     <a href="/invoices/{{invoice.id}}/pdf" style="padding:0.5rem 0.9rem; background:#c69214; color:#fff; border-radius:4px; text-decoration:none;">Download PDF</a>
-    {{#if isAdmin}}<a href="/invoices/{{invoice.id}}/edit" style="margin-left:0.75rem">Edit</a>{{/if}}
+    {{#if isAdmin}}
+      {{#if (eq invoice.status 'draft')}}
+        <a href="/invoices/{{invoice.id}}/edit" style="margin-left:0.75rem">Edit</a>
+      {{else}}
+        <span style="margin-left:0.75rem; color:#888;" title="Edit-after-send is coming in the next phase">Edit (locked)</span>
+      {{/if}}
+    {{/if}}
     {{#if isAdmin}}<a href="/invoices/{{invoice.id}}/email" style="margin-left:0.75rem">Email</a>{{/if}}
   </div>
 </div>

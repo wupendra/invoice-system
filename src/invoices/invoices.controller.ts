@@ -1,5 +1,5 @@
 import {
-  Body, Controller, Get, Param, ParseIntPipe, Post, Query, Render, Res,
+  BadRequestException, Body, Controller, Get, Param, ParseIntPipe, Post, Query, Render, Res,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { InvoicesService } from './invoices.service';
@@ -65,6 +65,46 @@ export class InvoicesController {
     // the user can retry by clicking Download on the view page.
     try { await this.svc.renderPdf(inv.id); } catch (e) { console.error('PDF pre-gen failed:', e); }
     return res.redirect(`/invoices/${inv.id}`);
+  }
+
+  @Roles('admin') @Get(':id/edit') @Render('pages/invoices/form')
+  async editForm(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    const invoice = await this.svc.findOne(id);
+    if (invoice.status !== 'draft') {
+      // Phase 4 will handle sent/corrected edit via revision. For now reject with 400.
+      throw new BadRequestException('Only draft invoices can be edited right now');
+    }
+    const customers = await this.customers.list();
+    const appSettings = await this.settings.get();
+    return {
+      title: `Edit invoice ${String(invoice.invoiceNumber).padStart(3, '0')}`,
+      layout: 'layouts/main', user, isAdmin: true,
+      action: `/invoices/${id}/edit`, mode: 'edit',
+      customers, appSettings,
+      defaults: {
+        customerId: invoice.customerId,
+        invoiceDate: typeof invoice.invoiceDate === 'string'
+          ? invoice.invoiceDate
+          : new Date(invoice.invoiceDate as unknown as Date).toISOString().slice(0, 10),
+        nextNumber: String(invoice.invoiceNumber).padStart(3, '0'),
+        items: invoice.items.map((it) => ({
+          itemName: it.itemName, description: it.description,
+          unitCost: it.unitCost, quantity: it.quantity, quantityNote: it.quantityNote ?? '',
+        })),
+        amountInWords: invoice.amountInWords,
+      },
+    };
+  }
+
+  @Roles('admin') @Post(':id/edit')
+  async editSubmit(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: InvoiceDto,
+    @Res() res: Response,
+  ) {
+    await this.svc.updateDraft(id, dto);
+    try { await this.svc.renderPdf(id); } catch (e) { console.error('PDF regen failed:', e); }
+    return res.redirect(`/invoices/${id}`);
   }
 
   @Get(':id') @Render('pages/invoices/view')
