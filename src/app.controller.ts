@@ -1,15 +1,17 @@
 import { Controller, Get, Render } from '@nestjs/common';
 import { CurrentUser, AuthUser } from './common/decorators/current-user.decorator';
+import { InvoicesService } from './invoices/invoices.service';
 
 @Controller()
 export class AppController {
+  constructor(private readonly invoices: InvoicesService) {}
+
   @Get() @Render('pages/dashboard')
-  dashboard(@CurrentUser() user: AuthUser) {
+  async dashboard(@CurrentUser() user: AuthUser) {
+    const recent = await this.invoices.list({ limit: 10 });
     return {
-      title: 'Dashboard',
-      layout: 'layouts/main',
-      user,
-      isAdmin: user.role === 'admin',
+      title: 'Dashboard', layout: 'layouts/main',
+      user, isAdmin: user.role === 'admin', recent,
     };
   }
 }

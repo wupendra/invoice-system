@@ -1,4 +1,9 @@
 <h1>{{title}}</h1>
+{{#if isCorrection}}
+<div style="margin-bottom:1rem; padding:0.75rem 1rem; background:#fff7e0; border-left:4px solid #e89c1f;">
+  <strong>This invoice has already been sent.</strong> Saving changes will create a revision: the original PDF stays on disk for the customer's records, a new PDF is generated with a correction notice, and the invoice status becomes <code>corrected</code>.
+</div>
+{{/if}}
 <form method="post" action="{{action}}" x-data="invoiceForm({{json defaults}}, {{appSettings.vatRate}}, '{{appSettings.currencyLabel}}')" @submit="onSubmit($event)">
   <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; max-width:720px">
     <div>

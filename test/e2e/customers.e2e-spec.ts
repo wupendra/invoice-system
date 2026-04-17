@@ -87,4 +87,9 @@ describe('Customers (e2e)', () => {
       .get(`/customers/${row.id}`).set('Cookie', viewerCookie).expect(200);
     expect(res.text).toContain('Acme Co.');
   });
+
+  it('viewer cannot open the users page', async () => {
+    await request(app.getHttpServer())
+      .get('/users').set('Cookie', viewerCookie).expect(403);
+  });
 });

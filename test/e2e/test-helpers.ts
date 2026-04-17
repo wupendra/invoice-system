@@ -7,6 +7,7 @@ import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { hashPassword } from '../../src/auth/bcrypt.helper';
 import { DataSource } from 'typeorm';
+import { HttpExceptionFilter } from '../../src/common/filters/http-exception.filter';
 
 export async function bootstrapTestApp(): Promise<INestApplication> {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
@@ -26,6 +27,7 @@ export async function bootstrapTestApp(): Promise<INestApplication> {
   hbs.registerHelper('padNum', (n: number) => String(n).padStart(3, '0'));
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
+  app.useGlobalFilters(new HttpExceptionFilter());
   await app.init();
   return app;
 }

@@ -1,0 +1,13 @@
+<h1>{{title}}</h1>
+<form method="post" action="{{action}}" style="max-width:480px">
+  <label>Email</label>
+  <input type="email" name="email" value="{{target.email}}" required/>
+  <label>Role</label>
+  <select name="role" required>
+    <option value="admin"  {{#if (eq target.role 'admin')}}selected{{/if}}>admin</option>
+    <option value="viewer" {{#if (eq target.role 'viewer')}}selected{{/if}}>viewer</option>
+  </select>
+  <label>{{#if isCreate}}Password{{else}}New password (leave blank to keep){{/if}}</label>
+  <input type="password" name="password" {{#if isCreate}}required minlength="6"{{/if}}/>
+  <button type="submit" class="primary" style="margin-top:1rem">Save</button>
+</form>

@@ -1,5 +1,5 @@
 import {
-  BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Render, Res,
+  Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Render, Res,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { InvoicesService } from './invoices.service';
@@ -68,9 +68,7 @@ export class InvoicesController {
   @Roles('admin') @Get(':uuid/edit') @Render('pages/invoices/form')
   async editForm(@Param('uuid', ParseUUIDPipe) uuid: string, @CurrentUser() user: AuthUser) {
     const invoice = await this.svc.findByUuid(uuid);
-    if (invoice.status !== 'draft') {
-      throw new BadRequestException('Only draft invoices can be edited right now');
-    }
+    // (removed draft-only guard)
     const customers = await this.customers.list();
     const appSettings = await this.settings.get();
     return {
@@ -78,6 +76,7 @@ export class InvoicesController {
       layout: 'layouts/main', user, isAdmin: true,
       action: `/invoices/${uuid}/edit`, mode: 'edit',
       customers, appSettings,
+      isCorrection: invoice.status !== 'draft',   // <- new: flag for the form view
       defaults: {
         customerId: invoice.customerId,
         invoiceDate: typeof invoice.invoiceDate === 'string'
@@ -100,7 +99,7 @@ export class InvoicesController {
     @Res() res: Response,
   ) {
     const invoice = await this.svc.findByUuid(uuid);
-    await this.svc.updateDraft(invoice.id, dto);
+    await this.svc.update(invoice.id, dto);
     try { await this.svc.renderPdf(invoice.id); } catch (e) { console.error('PDF regen failed:', e); }
     return res.redirect(`/invoices/${uuid}`);
   }

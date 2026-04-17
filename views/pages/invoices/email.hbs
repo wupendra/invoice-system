@@ -1,0 +1,17 @@
+<h1>Email invoice {{invoice.invoiceNumber}}</h1>
+{{#if error}}<div class="flash error" style="background:#fdecea; color:#b71c1c; padding:0.75rem 1rem; border-radius:4px; margin-bottom:1rem;">{{error}}</div>{{/if}}
+<form method="post" action="/invoices/{{invoice.uuid}}/email" style="max-width:720px">
+  <label>To (locked to customer's primary email)</label>
+  <input value="{{to}}" disabled/>
+  <label>CC (one per line)</label>
+  <textarea name="ccEmails" rows="3">{{ccText}}</textarea>
+  <label>Subject</label>
+  <input name="subject" value="{{subject}}" required/>
+  <label>Body (HTML)</label>
+  <textarea name="bodyHtml" rows="10" required>{{bodyHtml}}</textarea>
+  <details style="margin:1rem 0">
+    <summary>Preview</summary>
+    <div style="border:1px solid #ddd; padding:1rem">{{{bodyHtml}}}</div>
+  </details>
+  <button type="submit" class="primary">Send</button>
+</form>
